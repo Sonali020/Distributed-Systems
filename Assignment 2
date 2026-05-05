@@ -1,0 +1,122 @@
+Calculator.idl
+module CalculatorApp {
+    exception DivisionByZero {};
+    interface Calculator {
+        float add(in float a, in float b);
+        float subtract(in float a, in float b);
+        float multiply(in float a, in float b);
+        float divide(in float a, in float b) raises(DivisionByZero);
+    }; 
+};
+
+CalculatorServer.java
+import CalculatorApp.*;
+import org.omg.CORBA.*;
+import org.omg.CosNaming.*;
+import org.omg.PortableServer.*;
+
+class CalculatorImpl extends CalculatorPOA {
+    private ORB orb;
+
+    public void setORB(ORB orb_val) {
+        orb = orb_val;
+    }
+
+    public float add(float a, float b) {
+        return a + b;
+    }
+
+    public float subtract(float a, float b) {
+        return a - b;
+    }
+
+    public float multiply(float a, float b) {
+        return a * b;
+    }
+
+    public float divide(float a, float b) throws DivisionByZero {
+        if (b == 0) throw new DivisionByZero();
+        return a / b;
+    }
+}
+
+public class CalculatorServer {
+    public static void main(String args[]) {
+        try {
+            // Initialize ORB
+            ORB orb = ORB.init(args, null);
+            
+            // Get reference to RootPOA and activate POA Manager
+            POA rootpoa = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
+            rootpoa.the_POAManager().activate();
+
+            // Create servant and register it with ORB
+            CalculatorImpl calculator = new CalculatorImpl();
+            calculator.setORB(orb);
+            org.omg.CORBA.Object ref = rootpoa.servant_to_reference(calculator);
+            Calculator href = CalculatorHelper.narrow(ref);
+
+            // Bind object to Naming Service
+            org.omg.CORBA.Object objRef = orb.resolve_initial_references("NameService");
+            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
+            NameComponent path[] = ncRef.to_name("Calculator");
+            ncRef.rebind(path, href);
+
+            System.out.println("Calculator Server is running...");
+            orb.run();
+        } catch (Exception e) {
+            System.err.println("Server exception: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+}
+
+CalculatorClient.java
+import CalculatorApp.*;
+import org.omg.CORBA.*;
+import org.omg.CosNaming.*;
+
+public class CalculatorClient {
+    public static void main(String args[]) {
+        try {
+            // Initialize ORB
+            ORB orb = ORB.init(args, null);
+
+            // Get reference to Naming Service
+            org.omg.CORBA.Object objRef = orb.resolve_initial_references("NameService");
+            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
+
+            // Resolve Calculator object
+            Calculator calculator = CalculatorHelper.narrow(ncRef.resolve_str("Calculator"));
+
+            // Perform operations
+            System.out.println("Addition (10 + 5): " + calculator.add(10, 5));
+            System.out.println("Subtraction (10 - 5): " + calculator.subtract(10, 5));
+            System.out.println("Multiplication (10 * 5): " + calculator.multiply(10, 5));
+
+            try {
+                System.out.println("Division (10 / 2): " + calculator.divide(10, 2));
+                System.out.println("Division (10 / 0): " + calculator.divide(10, 0)); // Should raise exception
+            } catch (DivisionByZero e) {
+                System.out.println("Error: Division by zero is not allowed!");
+            }
+
+        } catch (Exception e) {
+            System.err.println("Client exception: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+}
+
+Run on java 1.8 version
+
+java -version
+idlj -fall Calculator.idl
+javac CalculatorApp/*.java *.java
+orbd -ORBInitialPort 1050 -ORBInitialHost localhost
+
+new terminal
+java CalculatorServer -ORBInitialPort 1050 -ORBInitialHost localhost
+
+new terminal
+java CalculatorClient -ORBInitialPort 1050 -ORBInitialHost localhost
