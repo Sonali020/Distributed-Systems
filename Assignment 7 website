@@ -50,6 +50,7 @@ async function calc(op) {
 </script>
 
 </body>
+</html>
 
 server/sever.js
 const express = require("express");
