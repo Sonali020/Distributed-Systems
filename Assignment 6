@@ -1,0 +1,89 @@
+import java.util.Scanner;
+
+public class Bully {
+
+    static int n;
+    static int[] process;
+
+    static void election(int initiator) {
+
+        int coordinator = initiator;
+
+        System.out.println("\nElection Process:");
+
+        for (int i = initiator; i < n; i++) {
+
+            System.out.println("Process P" + initiator +
+                    " sends message to P" + (i + 1));
+
+            if (process[i] == 1) {
+                coordinator = i + 1;
+            }
+        }
+
+        System.out.println("\nProcess P" + coordinator +
+                " becomes Coordinator");
+    }
+
+    public static void main(String[] args) {
+
+        Scanner sc = new Scanner(System.in);
+
+        System.out.print("Enter number of processes: ");
+        n = sc.nextInt();
+
+        process = new int[n];
+
+        System.out.println("Enter process status (1=Active, 0=Dead):");
+
+        for (int i = 0; i < n; i++) {
+            System.out.print("P" + (i + 1) + ": ");
+            process[i] = sc.nextInt();
+        }
+
+        System.out.print("Enter process initiating election: ");
+        int initiator = sc.nextInt();
+
+        if (process[initiator - 1] == 0) {
+            System.out.println("Initiator process is dead");
+        } else {
+            election(initiator);
+        }
+
+        sc.close();
+    }
+}
+
+javac Bully.java
+java Bully
+
+
+import java.util.Scanner;
+
+class Ring {
+    public static void main(String[] args) {
+
+        Scanner sc = new Scanner(System.in);
+
+        System.out.print("Enter number of processes: ");
+        int n = sc.nextInt();
+
+        System.out.print("Enter failed process ID: ");
+        int failed = sc.nextInt();
+
+        int leader = 0;
+
+        System.out.println("Active Processes:");
+
+        for (int i = 1; i <= n; i++) {
+            if (i != failed) {
+                System.out.println("Process " + i + " is active");
+                leader = i; // highest active ID becomes leader
+            }
+        }
+
+        System.out.println("Process " + leader + " elected as Leader");
+
+        sc.close();
+    }
+}
