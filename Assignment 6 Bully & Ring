@@ -1,89 +1,118 @@
-import java.util.Scanner;
+# Bully Algorithm
 
-public class Bully {
+class BullyAlgorithm:
 
-    static int n;
-    static int[] process;
+    def __init__(self, processes, coordinator=None):
+        self.processes = processes
+        self.coordinator = coordinator or max(processes)
 
-    static void election(int initiator) {
+    # Check whether process is alive
+    def is_alive(self, process_id):
+        return process_id in self.processes
 
-        int coordinator = initiator;
+    # Election process
+    def hold_election(self, initiator):
 
-        System.out.println("\nElection Process:");
+        print(f"Process {initiator} starts election.")
 
-        for (int i = initiator; i < n; i++) {
+        higher_processes = [
+            p for p in self.processes if p > initiator
+        ]
 
-            System.out.println("Process P" + initiator +
-                    " sends message to P" + (i + 1));
+        # If no higher process exists
+        if not higher_processes:
 
-            if (process[i] == 1) {
-                coordinator = i + 1;
-            }
-        }
+            self.coordinator = initiator
 
-        System.out.println("\nProcess P" + coordinator +
-                " becomes Coordinator");
-    }
+            print(f"Process {initiator} becomes the new coordinator.")
 
-    public static void main(String[] args) {
+        else:
 
-        Scanner sc = new Scanner(System.in);
+            # Send election message
+            for p in higher_processes:
+                print(f"Process {initiator} sends election message to {p}.")
 
-        System.out.print("Enter number of processes: ");
-        n = sc.nextInt();
+            responses = [
+                p for p in higher_processes if self.is_alive(p)
+            ]
 
-        process = new int[n];
+            if responses:
 
-        System.out.println("Enter process status (1=Active, 0=Dead):");
+                print(f"Process {initiator} gets responses from: {responses}")
 
-        for (int i = 0; i < n; i++) {
-            System.out.print("P" + (i + 1) + ": ");
-            process[i] = sc.nextInt();
-        }
+                # Highest process starts election
+                highest = max(responses)
 
-        System.out.print("Enter process initiating election: ");
-        int initiator = sc.nextInt();
+                self.hold_election(highest)
 
-        if (process[initiator - 1] == 0) {
-            System.out.println("Initiator process is dead");
-        } else {
-            election(initiator);
-        }
+            else:
 
-        sc.close();
-    }
-}
+                self.coordinator = initiator
 
-javac Bully.java
-java Bully
+                print(f"No higher processes responded. "
+                      f"{initiator} becomes coordinator.")
 
 
-import java.util.Scanner;
+# Example usage
+print("----- Bully Algorithm -----")
 
-class Ring {
-    public static void main(String[] args) {
+processes = [1, 2, 3, 5, 6]
 
-        Scanner sc = new Scanner(System.in);
+bully = BullyAlgorithm(processes)
 
-        System.out.print("Enter number of processes: ");
-        int n = sc.nextInt();
+bully.hold_election(initiator=3)
 
-        System.out.print("Enter failed process ID: ");
-        int failed = sc.nextInt();
 
-        int leader = 0;
+# --------------------------------------------------
+# Ring Algorithm
+# --------------------------------------------------
 
-        System.out.println("Active Processes:");
+class RingAlgorithm:
 
-        for (int i = 1; i <= n; i++) {
-            if (i != failed) {
-                System.out.println("Process " + i + " is active");
-                leader = i; // highest active ID becomes leader
-            }
-        }
+    def __init__(self, processes):
+        self.processes = sorted(processes)
+        self.ring = self.processes[:]
+        self.coordinator = None
 
-        System.out.println("Process " + leader + " elected as Leader");
+    # Check whether process is alive
+    def is_alive(self, process_id):
+        return process_id in self.ring
 
-        sc.close();
-    }
-}
+    # Election process
+    def hold_election(self, initiator):
+
+        print("\n----- Ring Algorithm -----")
+
+        print(f"Process {initiator} starts election.")
+
+        election_list = [initiator]
+
+        current_index = self.ring.index(initiator)
+
+        while True:
+
+            current_index = (current_index + 1) % len(self.ring)
+
+            next_process = self.ring[current_index]
+
+            if next_process == initiator:
+                break
+
+            print(f"Election message from "
+                  f"{election_list[-1]} to {next_process}")
+
+            election_list.append(next_process)
+
+        winner = max(election_list)
+
+        self.coordinator = winner
+
+        print(f"Process {winner} is elected as the new coordinator.")
+
+
+# Example usage
+processes = [1, 2, 4, 6]
+
+ring = RingAlgorithm(processes)
+
+ring.hold_election(initiator=2)
